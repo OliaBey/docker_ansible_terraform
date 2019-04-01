@@ -1,0 +1,28 @@
+---
+# tasks file for docker_nginx
+- name: start docker
+  service:
+    name: docker
+    state: started
+
+- name: check, docker-compose exists
+  stat:
+    path: home/ec2-user/docker/compose/docker-compose.yml
+  register: compose_path
+
+- name: check for indempotency
+  block:
+
+  - name: copy nginx directory
+    copy:
+      src: ~/Documents/dockerdemo/docker/
+      dest: docker/
+
+
+  - name: copy nginx_conf
+    template: src=default_conf.j2 dest=/home/ec2-user/docker/nginx/default.conf
+
+  - name: run docker compose
+    shell: docker-compose -f /home/ec2-user/docker/nginx/docker-compose.yml up -d
+
+  when: compose_path.stat.exists == false

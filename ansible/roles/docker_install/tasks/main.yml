@@ -1,0 +1,40 @@
+---
+# tasks file for setup_docker
+
+- name: install docker and wget
+  yum:
+    name: "{{ item }}"
+    state: installed
+  loop:
+     - wget
+     - docker
+
+- name: add group "docker"
+  group: name=docker
+
+- name: add ec2-user in group docker
+  command: usermod -aG docker ec2-user
+
+- name: check if docker-compose exists
+  stat:
+    path: /usr/local/bin/docker-compose
+  register: compose_path
+
+- name: install docker-compose
+  block:
+
+  - name: downloading and unpacking
+    shell: curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+  - name: chmod docker-compose
+    shell: chmod +x /usr/local/bin/docker-compose
+
+  - name: ln -s docker-compose
+    shell: ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+  when: compose_path.stat.exists == false
+
+- name: start docker
+  service:
+    name: docker
+    state: started

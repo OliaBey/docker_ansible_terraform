@@ -1,0 +1,32 @@
+---
+# tasks file for docker_stack
+- name: Docker start
+  service:
+    name: docker
+    state: started
+
+- name: Check if docker-compose file exists
+  stat:
+    path: /home/ec2-user/docker
+  register: compose_file
+
+- name: Creating docker stack
+  block:
+
+  - name: Creating directory "docker"
+    file:
+      path: /home/ec2-user/docker
+      state: directory
+
+  - name: Copy docker folder
+    copy:
+      src: ~/Documents/dockerdemo/docker/
+      dest: /home/ec2-user/docker/
+
+  - name: Building images
+    command: docker build -t tomcat:v1 -f /home/ec2-user/docker/tomcat/Dockerfile /home/ec2-user/docker/tomcat
+
+  - name: run stack
+    command: docker stack deploy --compose-file /home/ec2-user/docker/tomcat/docker-compose.yml tomcat_stack
+
+  when: compose_file.stat.exists == false
